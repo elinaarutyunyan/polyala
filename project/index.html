@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <meta
+      name="description"
+      content="Планировщик дедлайнов на неделю: создавайте задачи, отмечайте выполненные, данные сохраняются в браузере."
+    />
+    <title>Дедлайны на неделю</title>
+    <link rel="icon" href="data:," />
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("week-deadlines.theme");
+          var theme =
+            stored === "light" || stored === "dark"
+              ? stored
+              : window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          document.documentElement.dataset.theme = theme;
+        } catch (error) {
+          document.documentElement.dataset.theme = "light";
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="script.js" defer></script>
+  </head>
+
+  <body>
+    <header class="page-header">
+      <div class="page-header__bar">
+        <a class="brand" href="#week">
+          <span class="brand__mark" aria-hidden="true">✦</span>
+          Дедлайны
+        </a>
+
+        <div class="page-header__nav">
+          <div class="week-nav" role="group" aria-label="Навигация по неделям">
+            <button
+              class="week-nav__arrow"
+              type="button"
+              data-action="prev-week"
+              aria-label="Предыдущая неделя"
+            >
+              ←
+            </button>
+            <button
+              class="week-nav__arrow"
+              type="button"
+              data-action="next-week"
+              aria-label="Следующая неделя"
+            >
+              →
+            </button>
+          </div>
+
+          <button
+            class="theme-toggle"
+            type="button"
+            data-action="theme"
+            aria-label="Переключить тему"
+            aria-pressed="false"
+          ></button>
+        </div>
+      </div>
+
+      <div class="page-header__info">
+        <h1 class="week-label" id="week-label">Загрузка…</h1>
+
+        <div class="progress">
+          <div class="progress__bar">
+            <div class="progress__fill" id="progress-fill"></div>
+          </div>
+          <p class="progress__text" id="summary" aria-live="polite">Пока пусто</p>
+        </div>
+      </div>
+
+      <div class="week-strip" aria-label="Лента недели">
+        <button
+          class="week-strip__arrow"
+          type="button"
+          data-action="prev-week"
+          aria-label="Предыдущая неделя"
+        >
+          ‹
+        </button>
+        <div class="week-strip__days" id="week-strip-days"></div>
+        <button
+          class="week-strip__arrow"
+          type="button"
+          data-action="next-week"
+          aria-label="Следующая неделя"
+        >
+          ›
+        </button>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="day-view">
+        <button
+          class="day-view__arrow"
+          type="button"
+          data-action="prev-day"
+          aria-label="Предыдущий день"
+        >
+          ‹
+        </button>
+        <div class="week" id="week" aria-live="polite"></div>
+        <button
+          class="day-view__arrow"
+          type="button"
+          data-action="next-day"
+          aria-label="Следующий день"
+        >
+          ›
+        </button>
+      </div>
+
+      <div class="day-actions">
+        <button class="button button--ghost" type="button" data-action="today">
+          Сегодня
+        </button>
+        <button
+          class="button button--primary button--icon"
+          type="button"
+          data-action="new"
+          aria-label="Новый дедлайн"
+          title="Новый дедлайн"
+        >
+          <span aria-hidden="true">+</span>
+        </button>
+      </div>
+    </main>
+
+    <div class="modal" id="modal" hidden>
+      <div class="modal__backdrop" data-action="close"></div>
+
+      <div
+        class="modal__card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="form-title"
+      >
+        <form class="form" id="deadline-form">
+          <header class="form__header">
+            <h2 class="form__title" id="form-title">Новый дедлайн</h2>
+            <button
+              class="icon-button"
+              type="button"
+              data-action="close"
+              aria-label="Закрыть форму"
+            >
+              ✕
+            </button>
+          </header>
+
+          <div class="field">
+            <label class="field__label" for="dl-title">Название</label>
+            <input
+              class="field__control"
+              id="dl-title"
+              name="title"
+              type="text"
+              maxlength="120"
+              placeholder="Например, сдать эссе по истории"
+              autocomplete="off"
+              required
+            />
+          </div>
+
+          <div class="form__row">
+            <div class="field">
+              <label class="field__label" for="dl-date">Дата</label>
+              <input
+                class="field__control"
+                id="dl-date"
+                name="date"
+                type="date"
+                required
+              />
+            </div>
+
+            <div class="field">
+              <label class="field__label" for="dl-time">Время</label>
+              <input class="field__control" id="dl-time" name="time" type="time" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="dl-priority">Приоритет</label>
+            <select class="field__control" id="dl-priority" name="priority">
+              <option value="normal">Обычный</option>
+              <option value="high">Высокий</option>
+              <option value="low">Низкий</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="dl-description">Описание</label>
+            <textarea
+              class="field__control"
+              id="dl-description"
+              name="description"
+              rows="3"
+              maxlength="400"
+              placeholder="Необязательно"
+            ></textarea>
+          </div>
+
+          <div class="form__actions">
+            <button
+              class="button button--danger form__delete"
+              type="button"
+              data-action="delete-current"
+              hidden
+            >
+              Удалить
+            </button>
+            <button class="button button--ghost" type="button" data-action="close">
+              Отмена
+            </button>
+            <button class="button button--primary" type="submit">Сохранить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
